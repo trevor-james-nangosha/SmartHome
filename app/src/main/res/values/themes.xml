@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.SmartHome" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/custom_yellow</item>
+<!--        <item name="android:headerBackground">#ffe082</item>-->
+        <item name="android:headerBackground">#ffe082</item>
+<!--        <item name="android:numbersTextColor">#b71c1c</item>-->
+<!--        <item name="android:numbersInnerTextColor">#f44336</item>-->
+<!--        <item name="android:numbersSelectorColor">#33691e</item>-->
+<!--        <item name="android:numbersBackgroundColor">#ef9a9a</item>-->
+<!--        <item name="android:amPmTextColor">#9c27b0</item>-->
+    </style>
+
+    <style name="timePickerStyle" parent="@style/ThemeOverlay.AppCompat.Dialog.Alert">
+
+<!--        <item name="showTitle">true</item>-->
+<!--        <item name="colorControlActivated">#ffd600</item>-->
+<!--        <item name="colorAccent">@color/custom_yellow</item>-->
+<!--        <item name="android:textColorPrimary">#43a047</item>-->
+<!--        <item name="android:textColorSecondary">#f44336</item>-->
+    </style>
+</resources>
