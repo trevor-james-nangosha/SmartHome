@@ -9,6 +9,7 @@ data class AppUIState(
     var routineTime: String  = "",
     val notificationText: String = "",
     val lastRun: String = "Never",
+    val routineId: Int = 1,
     // ------------------------------------------------------
 
     val showCreateRoutineLinearLoader: Boolean = false,
@@ -22,5 +23,5 @@ data class Routine(
     val scheduledFor : String,
     val notification: String,
     val lastRun: String = "Never",
-
+    val routineID: Int
     )

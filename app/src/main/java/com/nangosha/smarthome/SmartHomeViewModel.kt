@@ -25,6 +25,12 @@ class SmartHomeViewModel : ViewModel(){
         }
     }
 
+    fun updateRoutineId(){
+        _uiState.update { currentState ->
+            currentState.copy(routineId = currentState.routineId + 1)
+        }
+    }
+
     fun updateNotificationText(notification: String){
         _uiState.update { currentState ->
             currentState.copy(notificationText = notification)
