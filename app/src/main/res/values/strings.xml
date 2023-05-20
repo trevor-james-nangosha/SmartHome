@@ -9,4 +9,7 @@
     <string name="create_routine">createRoutine</string>
     <string name="create_event">createEvent</string>
     <string name="create_action">createAction</string>
+    <string name="channel_name">Notifications for personal routines</string>
+    <string name="channel_description">SmartHomeChannelDescription</string>
+    <string name="channel_id">SmartHomeChannelID</string>
 </resources>

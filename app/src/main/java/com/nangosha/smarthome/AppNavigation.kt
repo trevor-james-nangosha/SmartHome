@@ -1,5 +1,8 @@
 package com.nangosha.smarthome
 
+import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -12,8 +15,9 @@ import com.nangosha.smarthome.routines.CreateRoutines
 import com.nangosha.smarthome.routines.RoutinesScreen
 import com.nangosha.smarthome.routines.SelectCreateRoutine
 
+@RequiresApi(Build.VERSION_CODES.M)
 @Composable
-fun AppNavigation (viewModel: SmartHomeViewModel = viewModel()) {
+fun AppNavigation (viewModel: SmartHomeViewModel = viewModel(), context: Context) {
     val navController = rememberNavController()
     NavHost(navController, startDestination = Screen.Home.route) {
         composable(Screen.Home.route) { HomeScreen(navController, viewModel) }
@@ -22,7 +26,7 @@ fun AppNavigation (viewModel: SmartHomeViewModel = viewModel()) {
         composable(Screen.Ideas.route) { IdeasScreen(navController) }
         composable(Screen.Settings.route) { SettingsScreen(navController) }
         composable(Screen.SelectCreateRoutine.route) { SelectCreateRoutine(navController, viewModel) }
-        composable(Screen.CreateRoutine.route) { CreateRoutines(navController, viewModel = viewModel) }
+        composable(Screen.CreateRoutine.route) { CreateRoutines(navController, viewModel = viewModel, context) }
         composable(Screen.CreateEvent.route) { CreateEvents(navController, viewModel) }
         composable(Screen.CreateAction.route) { CreateActions(navController, viewModel) }
     }
