@@ -1,6 +1,12 @@
 package com.nangosha.smarthome.routines
 
 import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,19 +21,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nangosha.smarthome.*
+import com.nangosha.smarthome.services.AlarmReceiver
 import com.nangosha.smarthome.ui.theme.CustomGrey
 import com.nangosha.smarthome.ui.theme.CustomYellow
 import kotlinx.coroutines.*
+import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import java.util.*
 
+@RequiresApi(Build.VERSION_CODES.M)
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun CreateRoutines (navController: NavController, viewModel: SmartHomeViewModel){
+fun CreateRoutines (navController: NavController, viewModel: SmartHomeViewModel, context: Context){
     val randomPlaceholderText = "Want this routine to run automatically? Add an event below"
 
     val uiState by viewModel.uiState.collectAsState()
     val routineName = uiState.routineName
     val routineTime = uiState.routineTime
+    val routineId = uiState.routineId
     val notificationText = uiState.notificationText
     val showTimePicker = uiState.showTimePicker
     // val lastRun = uiState.lastRun
@@ -39,12 +50,6 @@ fun CreateRoutines (navController: NavController, viewModel: SmartHomeViewModel)
     Scaffold(
         content = {
             Column {
-                // todo; delete after
-                // these lines are for debugging state issues.
-//                Text("RoutineName: $routineName")
-//                Text("RoutineTime: $routineTime")
-//                Text("Notification: $notificationText")
-
                 Row (modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 10.dp)){
@@ -123,8 +128,11 @@ fun CreateRoutines (navController: NavController, viewModel: SmartHomeViewModel)
                             viewModel,
                             name = routineName,
                             scheduledFor = routineTime,
-                            notification = notificationText
+                            notification = notificationText,
+                            context,
+                            routineId
                         )
+//                        scheduleNotification(routineName, notificationText, context, routineTime, viewModel)
                     }
                 }
 
@@ -284,6 +292,8 @@ fun CreateRoutines (navController: NavController, viewModel: SmartHomeViewModel)
         )
 }
 
+
+@RequiresApi(Build.VERSION_CODES.M)
 @SuppressLint("CoroutineCreationDuringComposition", "ComposableNaming")
 @Composable
 fun showLinearLoader(showLinearLoader: Boolean,
@@ -292,7 +302,9 @@ fun showLinearLoader(showLinearLoader: Boolean,
                      viewModel: SmartHomeViewModel,
                      name: String,
                      scheduledFor: String = "",
-                     notification: String = ""
+                     notification: String = "",
+                     ctx: Context,
+                     routineId: Int
             ){
     if(showLinearLoader){
         CreateRoutineLinearLoader()
@@ -301,9 +313,9 @@ fun showLinearLoader(showLinearLoader: Boolean,
             try {
                 withTimeout(3000) {
                     delay(2000)
-                    saveRoutine(viewModel, name, scheduledFor, notification)
+                    saveRoutine(viewModel, name, scheduledFor, notification, routineId)
+                    scheduleNotification(name, notification, ctx, scheduledFor, routineId)
                     viewModel.updateShowCreateRoutineLinearLoader(false)
-                    viewModel.resetState()
                     withContext(Dispatchers.Main) {
                         navController.navigate(Screen.Routines.route)
                     }
@@ -315,14 +327,59 @@ fun showLinearLoader(showLinearLoader: Boolean,
     }
 }
 
-fun saveRoutine(viewModel: SmartHomeViewModel, name: String, scheduledFor: String = "", notification: String = ""){
+fun saveRoutine(viewModel: SmartHomeViewModel, name: String, scheduledFor: String = "", notification: String = "", id: Int){
     if (scheduledFor.isBlank()){
         if(notification.isBlank()){
-            viewModel.updateRoutines(Routine(name, "Never", notification = "NO_NOTIFICATION"))
+            viewModel.updateRoutines(Routine(name, "Never", notification = "NO_NOTIFICATION", routineID = id))
         }
-        viewModel.updateRoutines(Routine(name,"Never", notification = notification))
+        viewModel.updateRoutines(Routine(name,"Never", notification = notification, routineID = id))
     }
 
-    viewModel.updateRoutines(Routine(name, scheduledFor, notification = notification))
+    viewModel.updateRoutines(Routine(name, scheduledFor, notification = notification, routineID = id))
+    viewModel.updateRoutineId()
     viewModel.resetState()
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+fun scheduleNotification(routineName: String, content: String, ctx: Context, routineTime: String, notificationId: Int){
+    val duration = getNotificationDuration(routineTime)
+    val alarmMgr: AlarmManager?
+
+    alarmMgr = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    val alarmIntent: PendingIntent = Intent(ctx, AlarmReceiver::class.java).let { intent ->
+        intent.putExtra("routine_name", routineName)
+        intent.putExtra("content", content)
+        intent.putExtra("id", notificationId)
+
+        PendingIntent.getBroadcast(ctx, 0, intent, PendingIntent.FLAG_MUTABLE)
+    }
+
+    alarmMgr.setExactAndAllowWhileIdle(
+        AlarmManager.RTC_WAKEUP,
+        duration,
+        alarmIntent
+    )
+//    viewModel.resetState()
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getNotificationDuration(time: String): Long {
+    val currentTime = LocalTime.now()
+    val targetTime = LocalTime.parse(time)
+    val hours = currentTime.until(targetTime, ChronoUnit.HOURS)
+    val minutes = currentTime.until(targetTime, ChronoUnit.MINUTES) % 60
+    var duration = 0L
+
+    if (hours != 0L && minutes != 0L){
+        duration = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000)
+    } else if(hours == 0L && minutes != 0L){
+        duration =  minutes * 60 * 1000
+    } else if(hours != 0L){
+        duration = hours * 60 * 60 * 1000
+    }
+
+    // todo, when someone selects the current date, the duration does not work so well.
+
+    return System.currentTimeMillis() + duration
 }
